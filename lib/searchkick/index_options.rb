@@ -20,7 +20,7 @@ module Searchkick
         index_true_value = true
         index_false_value = false
 
-        keyword_mapping[:ignore_above] = options[:ignore_above] || 30000
+        keyword_mapping[:ignore_above] = options[:ignore_above] || 10000
 
         settings = {
           analysis: {
