@@ -336,6 +336,8 @@ module Searchkick
               qs.concat(qs.map { |q| q.except(:cutoff_frequency).merge(fuzziness: edit_distance, prefix_length: prefix_length, max_expansions: max_expansions, boost: factor).merge(transpositions) })
             end
 
+            match_type = options[:match_phrase] == true ? :match_phrase : :match
+
             if field.start_with?("*.")
               q2 = qs.map { |q| {multi_match: q.merge(fields: [field], type: match_type == :match_phrase ? "phrase" : "best_fields")} }
               if below61?
