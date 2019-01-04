@@ -1,4 +1,4 @@
-require "active_model"
+require "active_support"
 require "active_support/core_ext/hash/deep_merge"
 require "elasticsearch"
 require "hashie"
@@ -17,36 +17,16 @@ require "searchkick/record_indexer"
 require "searchkick/results"
 require "searchkick/version"
 
+require "searchkick/railtie" if defined?(Rails)
 require "searchkick/logging" if defined?(ActiveSupport::Notifications)
 
-begin
-  require "rake"
-rescue LoadError
-  # do nothing
-end
-require "searchkick/tasks" if defined?(Rake)
-
-begin
-  require "rake"
-rescue LoadError
-  # do nothing
-end
-require "searchkick/tasks" if defined?(Rake)
-
-# background jobs
-begin
-  require "active_job"
-rescue LoadError
-  # do nothing
-end
-if defined?(ActiveJob)
-  require "searchkick/bulk_reindex_job"
-  require "searchkick/process_batch_job"
-  require "searchkick/process_queue_job"
-  require "searchkick/reindex_v2_job"
-end
-
 module Searchkick
+  # background jobs
+  autoload :BulkReindexJob,  "searchkick/bulk_reindex_job"
+  autoload :ProcessBatchJob, "searchkick/process_batch_job"
+  autoload :ProcessQueueJob, "searchkick/process_queue_job"
+  autoload :ReindexV2Job,    "searchkick/reindex_v2_job"
+
   class Error < StandardError; end
   class MissingIndexError < Error; end
   class UnsupportedVersionError < Error; end
@@ -95,10 +75,11 @@ module Searchkick
   end
 
   def self.server_below?(version)
-    Gem::Version.new(server_version.sub("-", ".")) < Gem::Version.new(version.sub("-", "."))
+    Gem::Version.new(server_version.split("-")[0]) < Gem::Version.new(version.split("-")[0])
   end
 
   def self.search(term = "*", model: nil, **options, &block)
+    options = options.dup
     klass = model
 
     # make Searchkick.search(index_name: [Product]) and Product.search equivalent
@@ -106,6 +87,7 @@ module Searchkick
       index_name = Array(options[:index_name])
       if index_name.size == 1 && index_name.first.respond_to?(:searchkick_index)
         klass = index_name.first
+        options.delete(:index_name)
       end
     end
 
@@ -246,6 +228,7 @@ module Searchkick
 end
 
 # TODO find better ActiveModel hook
+require "active_model/callbacks"
 ActiveModel::Callbacks.include(Searchkick::Model)
 
 ActiveSupport.on_load(:active_record) do

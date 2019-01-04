@@ -28,7 +28,7 @@ class ReindexTest < Minitest::Test
   end
 
   def test_async
-    skip if !defined?(ActiveJob)
+    skip unless defined?(ActiveJob)
 
     Searchkick.callbacks(false) do
       store_names ["Product A"]
@@ -40,12 +40,30 @@ class ReindexTest < Minitest::Test
     index.refresh
     assert_equal 1, index.total_docs
 
+    if defined?(Redis)
+      assert Searchkick.reindex_status(reindex[:name])
+    end
+
     Product.searchkick_index.promote(reindex[:index_name])
     assert_search "product", ["Product A"]
   end
 
+  def test_async_wait
+    skip unless defined?(ActiveJob) && defined?(Redis)
+
+    Searchkick.callbacks(false) do
+      store_names ["Product A"]
+    end
+
+    capture_io do
+      Product.reindex(async: {wait: true})
+    end
+
+    assert_search "product", ["Product A"]
+  end
+
   def test_async_non_integer_pk
-    skip if !defined?(ActiveJob)
+    skip unless defined?(ActiveJob)
 
     Sku.create(id: SecureRandom.hex, name: "Test")
     reindex = Sku.reindex(async: true)
@@ -65,5 +83,9 @@ class ReindexTest < Minitest::Test
     Product.search_index.promote(index.name, update_refresh_interval: true)
     assert_equal "1s", index.refresh_interval
     assert_equal "1s", Product.search_index.refresh_interval
+  end
+
+  def test_resume
+    assert Product.reindex(resume: true)
   end
 end

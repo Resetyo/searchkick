@@ -1,6 +1,42 @@
-## 3.0.3 [unreleased]
+## 3.1.3 [unreleased]
 
+- Added `prefix` to `where`
+- Fixed error with some language stemmers and Elasticsearch 6.5
+
+## 3.1.2
+
+- Improved performance of indices boost
+- Fixed deletes with routing and `async` callbacks
+- Fixed deletes with routing and `queue` callbacks
+- Fixed deprecation warnings
+- Fixed field misspellings for older partial match format
+
+## 3.1.1
+
+- Added per-field misspellings
+- Added `case_sensitive` option
+- Added `stem` option
+- Added `total_entries` option
+- Fixed `exclude` option with match all
+- Fixed `with_highlights` method
+
+## 3.1.0
+
+- Added `:inline` as alias for `true` for `callbacks` and `mode` options
+- Friendlier error message for bad mapping with partial matches
+- Warn when records in search index do not exist in database
+- Easier merging for `merge_mapping`
+- Fixed `with_hit` and `with_highlights` when records in search index do not exist in database
+- Fixed error with highlights and match all
+
+## 3.0.3
+
+- Added support for pagination with `body` option
+- Added `boost_by_recency` option
 - Fixed "Model Search Data" output for `debug` option
+- Fixed `reindex_status` error
+- Fixed error with optional operators in Ruby regexp
+- Fixed deprecation warnings for Elasticsearch 6.2+
 
 ## 3.0.2
 

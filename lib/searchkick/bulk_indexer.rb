@@ -24,7 +24,7 @@ module Searchkick
           # to get the max _id without scripting since it's a string
 
           # TODO use primary key and prefix with table name
-          relation = relation.where("id > ?", total_docs)
+          relation = relation.where("id > ?", index.total_docs)
         end
 
         relation = relation.select("id").except(:includes, :preload) if async
@@ -49,6 +49,10 @@ module Searchkick
 
     def bulk_update(records, method_name)
       Searchkick.indexer.queue(records.map { |r| RecordData.new(index, r).update_data(method_name) })
+    end
+
+    def batches_left
+      Searchkick.with_redis { |r| r.scard(batches_key) }
     end
 
     private
@@ -134,12 +138,12 @@ module Searchkick
     end
 
     def bulk_reindex_job(scope, batch_id, options)
+      Searchkick.with_redis { |r| r.sadd(batches_key, batch_id) }
       Searchkick::BulkReindexJob.perform_later({
         class_name: scope.model_name.name,
         index_name: index.name,
         batch_id: batch_id
       }.merge(options))
-      Searchkick.with_redis { |r| r.sadd(batches_key, batch_id) }
     end
 
     def with_retries
@@ -154,10 +158,6 @@ module Searchkick
         end
         raise e
       end
-    end
-
-    def batches_left
-      Searchkick.with_redis { |r| r.scard(batches_key) }
     end
 
     def batches_key

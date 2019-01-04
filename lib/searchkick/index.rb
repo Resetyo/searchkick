@@ -17,7 +17,7 @@ module Searchkick
     end
 
     def delete
-      if !Searchkick.server_below?("6.0.0-alpha1") && alias_exists?
+      if !Searchkick.server_below?("6.0.0") && alias_exists?
         # can't call delete directly on aliases in ES 6
         indices = client.indices.get_alias(name: name).keys
         client.indices.delete index: indices
@@ -159,10 +159,9 @@ module Searchkick
         .keep_if { |k, _| !options[:fields] || options[:fields].map(&:to_s).include?(k) }
         .values.compact.join(" ")
 
-      # TODO deep merge method
       options[:where] ||= {}
       options[:where][:_id] ||= {}
-      options[:where][:_id][:not] = record.id.to_s
+      options[:where][:_id][:not] = Array(options[:where][:_id][:not]) + [record.id.to_s]
       options[:per_page] ||= 10
       options[:similar] = true
 
